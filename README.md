@@ -45,10 +45,10 @@ GOPATH is the root of the workspace. Inside it need to create 3 new folders
 
 Note: make sure to clone the project to src/ folder so that dont have to configure anything. After that your are good to go
 
-if having and issue with the 3rd party library import
+if having issues with the 3rd party libraries importing run command below:
 
 ```
-run "go get -u <github.com>/<username>/<reponame>" command
+go get -u <github.com>/<username>/<reponame>
 ```
   
 ---
