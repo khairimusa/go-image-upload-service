@@ -5,15 +5,14 @@ This project was part of the assessment for Servicerocket agile developer positi
 
 to run the program:
 
-1. Clone the repo
+Clone the repo
 
 ```git
 
 git clone https://khairimusa60@bitbucket.org/khairimusa60/khairi-image-upload-service.git
 
 ```
-
-2. Run main.go
+Run main class
 
 ```go
 
