@@ -2,9 +2,6 @@
 
 This project was part of the assessment for Servicerocket agile developer position 
 
-1. Click **Source** on the left side.
-
-
 ---
 
 ## Architecure
