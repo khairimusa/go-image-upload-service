@@ -1,0 +1,7 @@
+{{template "header" .}}
+<h1>Uploaded Photo Thumbnails: </h1>
+{{range .Photos}}
+    <br/>
+    <a href="#" download="{{ .PhotoPath }}"><img src="{{ .PhotoPath }}"></a>
+{{end}}
+{{template "footer"}}
