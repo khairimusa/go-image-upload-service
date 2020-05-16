@@ -14,7 +14,7 @@
     <p><b>Image Height:</b> {{ .PhotoHeight }}</p>
     <a href="#"><img src="{{ .PhotoPath }}"></a>
 {{end}}
-
+<br>
 {{range .Photos}}
 <table>
     <tr>
@@ -26,20 +26,20 @@
         <td>{{ .PhotoName }}</td>
     </tr>
     <tr>
-        <b>Image Path:</b>
+        <td><b>Image Path:</b></td>
         <td>{{ .PhotoPath }}</td>
     </tr>
     <tr>
-        <b>Image Width:</b>
+        <td><b>Image Width:</b></td>
         <td>{{ .PhotoWidth }}</td>
     </tr>
     <tr>
-        <b>Image Height:</b>
-        <td>{{ .PhotoPath }}</td>
+        <td><b>Image Height:</b></td>
+        <td>{{ .PhotoHeight }}</td>
     </tr>
     <tr>
-        <b>Image:</b>
-        <td>{{ .PhotoPath }}</td>
+        <td><b>Image:</b></td>
+        <td><a href="#"><img src="{{ .PhotoPath }}"></a></td>
     </tr>
 </table>
 {{ end }}
