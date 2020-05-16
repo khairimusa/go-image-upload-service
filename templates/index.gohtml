@@ -12,8 +12,10 @@
     <p><b>Image Path:</b> {{ .PhotoPath }}</p>
     <p><b>Image Width:</b> {{ .PhotoWidth }}</p>
     <p><b>Image Height:</b> {{ .PhotoHeight }}</p>
-    <a href="#"><img src="{{ .PhotoPath }}"></a>
+    <img src="{{.PhotoPath}}" />
 {{end}}
+
+
 <br>
 {{range .Photos}}
 <table>
