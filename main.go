@@ -61,8 +61,12 @@ func init() {
 func main() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/about", about)
-	http.Handle("/favicon.ico", http.NotFoundHandler())
+	//http.Handle("/favicon.ico", http.NotFoundHandler())
+	http.Handle(
+		"/public/pics/",
+		http.StripPrefix("/public/pics/", http.FileServer(http.Dir("public/pics/"))))
 	http.ListenAndServe(":8080", nil)
+
 }
 
 // handler func for about page
@@ -103,6 +107,8 @@ func index(w http.ResponseWriter, req *http.Request) {
 			fmt.Println(err)
 		}
 		path := filepath.Join(rootDirectory, "public", "pics", fileName) // will produce: 04_upload_pictures/public/pic/{filename}
+		fowardSlashPath := strings.Replace(path, "\\", "/", -1)
+		dotDotPath := strings.Replace(fowardSlashPath, "C:/Users/khair/go/src/khairi-go-image-upload/", "../", -1)
 		newFile, err := os.Create(path) // if theres already the file, it will truncate the existing one
 		if err != nil {
 			fmt.Println(err)
@@ -162,7 +168,9 @@ func index(w http.ResponseWriter, req *http.Request) {
 
 
 		// construct the photo struct and append to photoModel struct
-		createdPhoto.PhotoPath = path
+		//createdPhoto.PhotoPath = path
+		//createdPhoto.PhotoPath = fowardSlashPath
+		createdPhoto.PhotoPath = dotDotPath
 		createdPhoto.PhotoName = fileName
 		PhotoModel.Photos = append(PhotoModel.Photos, createdPhoto)
 

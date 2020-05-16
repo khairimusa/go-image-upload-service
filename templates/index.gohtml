@@ -7,13 +7,13 @@
 <h2>Uploaded Image(s): </h2>
 <p>This is original photo details.</p>
 {{/* This part to print the original details of the photo uploaded */}}
-{{range .Photos}}
+{{/* {{range .Photos}}
     <p><b>Image Name:</b> {{ .PhotoName }}</p>
     <p><b>Image Path:</b> {{ .PhotoPath }}</p>
     <p><b>Image Width:</b> {{ .PhotoWidth }}</p>
     <p><b>Image Height:</b> {{ .PhotoHeight }}</p>
-    <a href="#"><img src="{{ .PhotoPath }}"></a>
-{{end}}
+    <img src="{{.PhotoPath}}" />
+{{end}} */}}
 <br>
 {{range .Photos}}
 <table>
@@ -39,7 +39,7 @@
     </tr>
     <tr>
         <td><b>Image:</b></td>
-        <td><a href="#"><img src="{{ .PhotoPath }}"></a></td>
+        <td><img src="{{ .PhotoPath }}"></td>
     </tr>
 </table>
 {{ end }}
