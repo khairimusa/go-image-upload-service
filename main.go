@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"crypto/rand"
 	"crypto/sha1"
 	"fmt"
@@ -10,8 +11,10 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	_ "archive/zip"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -43,11 +46,17 @@ type QuaterSizeThumbnail struct {
 	QuaterSizeThumbnailHeight int
 }
 
+// photo inside the zip file
+type UnzipedPhoto struct {
+	UnzipedPhotoPath string
+}
+
 // PhotoModel struct
 var PhotoModel struct{
 	Photos []OriginalPhoto
 	HalfSizeThumbnails [] HalfSizeThumbnail
 	QuaterSizeThumbnails []QuaterSizeThumbnail
+	UnzipedPhotos []UnzipedPhoto
 }
 
 // html template
@@ -59,10 +68,12 @@ const maxUploadSize = 2 * 1024 * 1024 // 2MB
 func init() {
 	// Must() method must be succeed before the program shuts down
 	// parseGlob() just parse the template files in templates/ folder and get it reeady to be use
-	tpl = template.Must(template.ParseGlob("templates/*"))
+	// glob patterns specifies sets of filenames wildcard character. example mv *.txt
+	// glob is a bunch of file names in short
+	tpl = template.Must(template.ParseGlob("templates/*.gohtml"))
 }
 
-// function to initialize all enpoints and the port
+// function to initialize all endpoints and the port
 func main() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/about", about)
@@ -91,6 +102,8 @@ func index(w http.ResponseWriter, req *http.Request) {
 	// 1/4 size photo thumbnail
 	var quaterSizeThumbnail QuaterSizeThumbnail
 
+	// unziped photo details
+	var unzipedPhotoDetails UnzipedPhoto
 
 	// process form submission
 	if req.Method == http.MethodPost {
@@ -119,18 +132,12 @@ func index(w http.ResponseWriter, req *http.Request) {
 		switch detectedFileType {
 		case "image/jpeg", "image/jpg":
 		case "image/gif", "image/png":
-		case "file/zip":
+		case "application/zip":
 			break
 		default:
 			renderError(w, "INVALID_FILE_TYPE", http.StatusBadRequest)
 			return
 		}
-
-		// create sha for file name
-		ext := strings.Split(fileHeader.Filename, ".")[1]
-		hash := sha1.New()
-		io.Copy(hash, multipartFile)
-		fileName := fmt.Sprintf("%x", hash.Sum(nil)) + "." + ext
 
 		// get root directory
 		rootDirectory, err := os.Getwd()
@@ -138,53 +145,118 @@ func index(w http.ResponseWriter, req *http.Request) {
 			fmt.Println(err)
 		}
 
-		// this will produce the real path, path from the C: drive
-		path := filepath.Join(rootDirectory, "public", "pics", fileName)
-		// this replace all the \ slash of windows directory to / slash so that html can read
-		fowardSlashPath := strings.Replace(path, "\\", "/", -1)
-		// convert the real path to absolute path(in the root)
-		dotDotPath := strings.Replace(fowardSlashPath, "C:/Users/khair/go/src/khairi-go-image-upload/", "../", -1)
-		newFile, err := os.Create(path) // if theres already the file, it will truncate the existing one
-		if err != nil {
-			fmt.Println(err)
+		// create sha for file name
+		ext := strings.Split(fileHeader.Filename, ".")[1]
+		hash := sha1.New()
+		// if it is a zip file
+		if (ext == "zip"){
+			zipFileName := fmt.Sprintf("%x", hash.Sum(nil)) + "." + ext
+			zipFilePath, _, dotDotPath, err  := generateDotDotPath(rootDirectory, zipFileName)
+			log.Println(dotDotPath)
+
+			newZipFile, err := os.Create(zipFilePath) // if theres already the file, it will truncate the existing one
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer newZipFile.Close()
+
+			// copy
+			multipartFile.Seek(0, 0)
+			io.Copy(newZipFile, multipartFile)
+
+			// read the uploaded image in public/pics path(file server)
+			zipReader, err := zip.OpenReader(zipFilePath)
+			if err != nil {
+				log.Println(err)
+			}
+			defer zipReader.Close()
+			for _, file := range zipReader.Reader.File {
+				zippedFile, err := file.Open()
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer zippedFile.Close()
+
+				targetDir := "./public/pics"
+				extractedFilePath := filepath.Join(
+					targetDir,
+					file.Name,
+				)
+				if file.FileInfo().IsDir() {
+					// this one will print the unziped folder location not the image inside it
+					os.MkdirAll(extractedFilePath, file.Mode())
+				} else {
+					currentFileName := file.Name
+					_,_,dotDotPath,err := generateDotDotPath(rootDirectory, currentFileName)
+					unzipedPhotoDetails.UnzipedPhotoPath = dotDotPath
+					PhotoModel.UnzipedPhotos = append(PhotoModel.UnzipedPhotos, unzipedPhotoDetails)
+					outputFile, err := os.OpenFile(
+						extractedFilePath,
+						os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+						file.Mode(),
+					)
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer outputFile.Close()
+
+					_, err = io.Copy(outputFile, zippedFile)
+					if err != nil {
+						log.Fatal(err)
+					}
+				}
+			}
+
+		} else {
+			io.Copy(hash, multipartFile)
+			fileName := fmt.Sprintf("%x", hash.Sum(nil)) + "." + ext
+			path,_,dotDotPath,err :=generateDotDotPath(rootDirectory, fileName)
+			newFile, err := os.Create(path) // if theres already the file, it will truncate the existing one
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer newFile.Close()
+
+			// copy
+			multipartFile.Seek(0, 0)
+			io.Copy(newFile, multipartFile)
+
+			// read the uploaded image in public/pics path(file server)
+			reader, err := os.Open(path)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			// get the image configuration by decoding the reader that contains the file
+			imgConfig, _, err :=image.DecodeConfig(reader)
+			if err != nil{
+				fmt.Println(err)
+			}
+
+			// close the reader after all operation done
+			defer reader.Close()
+
+			// construct the photo struct and append to photoModel struct
+			createdPhoto.PhotoPath = dotDotPath
+			createdPhoto.PhotoName = fileName
+			createdPhoto.PhotoWidth = imgConfig.Width
+			createdPhoto.PhotoHeight = imgConfig.Height
+			PhotoModel.Photos = append(PhotoModel.Photos, createdPhoto)
+
+			// check if the width or height less than 128px
+			if createdPhoto.PhotoWidth < 128 && createdPhoto.PhotoHeight < 128 {
+				// just return the original image cause its smaller than 128
+				http.Redirect(w, req, "/", http.StatusAccepted)
+			} else {
+				// half size
+				generateThumbnail(2,imgConfig, path, detectedFileType, w, rootDirectory, halfSizeThumbnail, quaterSizeThumbnail)
+
+				// quater size
+				generateThumbnail(4,imgConfig, path, detectedFileType, w, rootDirectory, halfSizeThumbnail, quaterSizeThumbnail)
+			}
 		}
-		defer newFile.Close()
 
-		// copy
-		multipartFile.Seek(0, 0)
-		io.Copy(newFile, multipartFile)
 
-		// read the uploaded image in public/pics path(file server)
-		reader, err := os.Open(path)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		// get the image configuration by decoding the reader that contains the file
-		imgConfig, _, err :=image.DecodeConfig(reader)
-		if err != nil{
-			fmt.Println(err)
-		}
-
-		// close the reader after all operation done
-		defer reader.Close()
-
-		// construct the photo struct and append to photoModel struct
-		//createdPhoto.PhotoPath = path
-		//createdPhoto.PhotoPath = fowardSlashPath
-		createdPhoto.PhotoPath = dotDotPath
-		createdPhoto.PhotoName = fileName
-		createdPhoto.PhotoWidth = imgConfig.Width
-		createdPhoto.PhotoHeight = imgConfig.Height
-		PhotoModel.Photos = append(PhotoModel.Photos, createdPhoto)
-
-		// check if the width or height less than 128px
-
-		// half size
-		generateThumbnail(2,imgConfig, path, detectedFileType, w, rootDirectory, halfSizeThumbnail, quaterSizeThumbnail)
-
-		// quater size
-		generateThumbnail(4,imgConfig, path, detectedFileType, w, rootDirectory, halfSizeThumbnail, quaterSizeThumbnail)
 	}
 
 	// this method writes into the template takes in writer, template name, and data
@@ -196,6 +268,7 @@ func renderError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(message))
 }
+
 
 // generate random token
 func randToken(len int) string {
@@ -268,5 +341,14 @@ func generateThumbnail(n int, imgConfig image.Config, path string, detectedFileT
 		quaterSizeThumbnail.QuaterSizeThumbnailWidth = thumbnailImgConfig.Width
 		PhotoModel.QuaterSizeThumbnails = append(PhotoModel.QuaterSizeThumbnails, quaterSizeThumbnail)
 	}
+}
 
+func generateDotDotPath(rootDirectory string, fileName string) (path string, fowardSlashPath string, dotDotPath string, err error){
+	// this will produce the real path, path from the C: drive
+	path = filepath.Join(rootDirectory, "public", "pics", fileName)
+	// this replace all the \ slash of windows directory to / slash so that html can read
+	fowardSlashPath = strings.Replace(path, "\\", "/", -1)
+	// convert the real path to absolute path(in the root)
+	dotDotPath = strings.Replace(fowardSlashPath, "C:/Users/khair/go/src/khairi-go-image-upload/", "../", -1)
+	return
 }
