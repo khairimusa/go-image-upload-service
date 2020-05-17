@@ -110,4 +110,28 @@
     </table>
 {{ end }}
 
+<h2>Image(s) from Zip file: </h2>
+{{range .UnzipedPhotos}}
+    <br>
+    <table>
+        <tr>
+            <th>Information</th>
+            <th>Details</th>
+        </tr>
+        <tr>
+            <td><b>Image Path:</b></td>
+            <td>{{ .UnzipedPhotoPath }}</td>
+        </tr>
+        <tr>
+            <td><b>Image:</b></td>
+            <td><img src="{{ .UnzipedPhotoPath }}"></td>
+        </tr>
+        <tr>
+            <td><b>Image Permanent Link:</b></td>
+            <td><a href="{{ .UnzipedPhotoPath }}">{{ .UnzipedPhotoPath }}</a></td>
+        </tr>
+    </table>
+
+{{ end }}
+
 {{template "footer"}}
