@@ -4,16 +4,7 @@
     <input type="file" name="nf">
     <input type="submit">
 </form>
-<h2>Uploaded Image(s): </h2>
-<p>This is original photo details.</p>
-{{/* This part to print the original details of the photo uploaded */}}
-{{/* {{range .Photos}}
-    <p><b>Image Name:</b> {{ .PhotoName }}</p>
-    <p><b>Image Path:</b> {{ .PhotoPath }}</p>
-    <p><b>Image Width:</b> {{ .PhotoWidth }}</p>
-    <p><b>Image Height:</b> {{ .PhotoHeight }}</p>
-    <img src="{{.PhotoPath}}" />
-{{end}} */}}
+<h2>Uploaded Image: </h2>
 <br>
 {{range .Photos}}
 <table>
@@ -41,8 +32,82 @@
         <td><b>Image:</b></td>
         <td><img src="{{ .PhotoPath }}"></td>
     </tr>
+    <tr>
+        <td><b>Image Permanent Link:</b></td>
+        <td><a href="{{ .PhotoPath }}">{{ .PhotoPath }}</a></td>
+    </tr>
+</table>
+
+{{ end }}
+
+<h2>1/2 Size Thumbnail: </h2>
+<br>
+{{range .HalfSizeThumbnails}}
+<table>
+    <tr>
+        <th>Information</th>
+        <th>Details</th>
+    </tr>
+    <tr>
+        <td><b>Image Name:</b></td>
+        <td>{{ .HalfSizeThumbnailName }}</td>
+    </tr>
+    <tr>
+        <td><b>Image Path:</b></td>
+        <td>{{ .HalfSizeThumbnailPath }}</td>
+    </tr>
+    <tr>
+        <td><b>Image Width:</b></td>
+        <td>{{ .HalfSizeThumbnailWidth }}</td>
+    </tr>
+    <tr>
+        <td><b>Image Height:</b></td>
+        <td>{{ .HalfSizeThumbnailHeight }}</td>
+    </tr>
+    <tr>
+        <td><b>Image:</b></td>
+        <td><img src="{{ .HalfSizeThumbnailPath }}"></td>
+    </tr>
+    <tr>
+        <td><b>Image Permanent Link:</b></td>
+        <td><a href="{{ .HalfSizeThumbnailPath }}">{{ .HalfSizeThumbnailPath }}</a></td>
+    </tr>
 </table>
 {{ end }}
-{{/* This pa   */}}
+
+<h2>1/4 Size Thumbnail: </h2>
+<br>
+{{range .QuaterSizeThumbnails}}
+    <table>
+        <tr>
+            <th>Information</th>
+            <th>Details</th>
+        </tr>
+        <tr>
+            <td><b>Image Name:</b></td>
+            <td>{{ .QuaterSizeThumbnailName }}</td>
+        </tr>
+        <tr>
+            <td><b>Image Path:</b></td>
+            <td>{{ .QuaterSizeThumbnailPath }}</td>
+        </tr>
+        <tr>
+            <td><b>Image Width:</b></td>
+            <td>{{ .QuaterSizeThumbnailWidth }}</td>
+        </tr>
+        <tr>
+            <td><b>Image Height:</b></td>
+            <td>{{ .QuaterSizeThumbnailHeight }}</td>
+        </tr>
+        <tr>
+            <td><b>Image:</b></td>
+            <td><img src="{{ .QuaterSizeThumbnailPath }}"></td>
+        </tr>
+        <tr>
+            <td><b>Image Permanent Link:</b></td>
+            <td><a href="{{ .QuaterSizeThumbnailPath }}">{{ .QuaterSizeThumbnailPath }}</a></td>
+        </tr>
+    </table>
+{{ end }}
 
 {{template "footer"}}
