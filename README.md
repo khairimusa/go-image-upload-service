@@ -70,3 +70,16 @@ API endpoints(base url: "http://localhost:8080") specificactions:
 | `GET` | `/about` | Get this endpoint to see the about page |
 
 ---
+
+## Main screen
+
+1. This is the main screen where we can upload the images/zip file. This part shows the original image details and permanent link to it
+![](https://bitbucket.org/khairimusa60/khairi-image-upload-service/raw/7783b4b58cb41882e95b41c509eac28ca4804f9a/pictures/main_screen_ss.png)
+
+2. This is the part where the half and quater sized image being shown
+![](https://bitbucket.org/khairimusa60/khairi-image-upload-service/raw/7783b4b58cb41882e95b41c509eac28ca4804f9a/pictures/main_screen_ss_1.png)
+
+3. This is the part where all the images inside a zip file will be shown with each's parmenant link
+![](https://bitbucket.org/khairimusa60/khairi-image-upload-service/raw/7783b4b58cb41882e95b41c509eac28ca4804f9a/pictures/main_screen_ss_2.png)
+
+
