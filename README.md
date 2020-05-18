@@ -43,9 +43,9 @@ GOPATH is the root of the workspace. Inside it need to create 3 new folders
 3. bin/: location of compiled executable programs built by Go.
 ```
 
-Note: make sure to clone the project to src/ folder so that dont have to configure anything. After that your are good to go
+Note: make sure to clone the project to src/ folder so that dont have to configure anything. After that you are good to go
 
-if having issues with the 3rd party libraries importing run command below:
+if having issues importing 3rd party libraries run command below:
 
 ```
 go get -u <github.com>/<username>/<reponame>
