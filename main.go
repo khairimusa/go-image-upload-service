@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	_ "archive/zip"
 	"crypto/rand"
-	"crypto/sha1"
 	"fmt"
 	"html/template"
 	"image"
@@ -147,13 +146,19 @@ func index(w http.ResponseWriter, req *http.Request) {
 			fmt.Println(err)
 		}
 
-		// create sha for file name
-		ext := strings.Split(fileHeader.Filename, ".")[1]
-		hash := sha1.New()
+		// get the extension if it is an image
+		ext, err := mime.ExtensionsByType(detectedFileType)
+		if err != nil {
+			fmt.Println(err)
+		}
+		// create random token for file name
+		hash := randToken(12)
 		// if it is a zip file
-		if ext == "zip" {
+		if detectedFileType == "application/zip" {
+			// get .zip extension
+			extZip := strings.Split(fileHeader.Filename, ".")[1]
 			// set the name of the zip file
-			zipFileName := fmt.Sprintf("%x", hash.Sum(nil)) + "." + ext
+			zipFileName := fmt.Sprintf("%x", hash) + "." + extZip
 
 			// get path from the method from passing in root directory and the zip file name
 			zipFilePath, _, _, err := generateDotDotPath(rootDirectory, zipFileName)
@@ -178,6 +183,8 @@ func index(w http.ResponseWriter, req *http.Request) {
 				log.Println(err)
 			}
 			defer zipReader.Close()
+
+			// loop through the images inside the unzipped file
 			for _, file := range zipReader.Reader.File {
 				zippedFile, err := file.Open()
 				if err != nil {
@@ -185,24 +192,22 @@ func index(w http.ResponseWriter, req *http.Request) {
 				}
 				defer zippedFile.Close()
 
+				// targetDir is the file server
 				targetDir := "./public/pics"
-				extractedFilePath := filepath.Join(
-					targetDir,
-					file.Name,
-				)
+				extractedFilePath := filepath.Join(targetDir, file.Name)
 				if file.FileInfo().IsDir() {
 					// this one will print the unziped folder location not the image inside it
 					os.MkdirAll(extractedFilePath, file.Mode())
 				} else {
+					// read unzipped folder and the current image inside it
 					currentFileName := file.Name
+					// generate html readable ../ path
 					_, _, dotDotPath, err := generateDotDotPath(rootDirectory, currentFileName)
+					// add the photo path to model to show the parmenant link to the front end
 					unzipedPhotoDetails.UnzipedPhotoPath = dotDotPath
 					PhotoModel.UnzipedPhotos = append(PhotoModel.UnzipedPhotos, unzipedPhotoDetails)
-					outputFile, err := os.OpenFile(
-						extractedFilePath,
-						os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-						file.Mode(),
-					)
+
+					outputFile, err := os.OpenFile(extractedFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -217,9 +222,8 @@ func index(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			// if file extension is not a zip
-			io.Copy(hash, multipartFile)
 			//sprint f is just a way print the string content without it showing in the console.
-			fileName := fmt.Sprintf("%x", hash.Sum(nil)) + "." + ext
+			fileName := hash + ext[0]
 			path, _, dotDotPath, err := generateDotDotPath(rootDirectory, fileName)
 			newFile, err := os.Create(path) // if theres already the file, it will truncate the existing one
 			if err != nil {
@@ -312,11 +316,7 @@ func generateThumbnail(n int, imgConfig image.Config, path string, detectedFileT
 		return
 	}
 
-	thumbnailPath := filepath.Join(rootDirectory, "public", "pics", thumbnailFullName)
-	// this replace all the \ slash of windows directory to / slash so that html can read
-	fowardSlashthumbnailPath := strings.Replace(thumbnailPath, "\\", "/", -1)
-	// convert the real path to absolute path(in the root)
-	dotDotthumbnailPath := strings.Replace(fowardSlashthumbnailPath, "C:/Users/khair/go/src/khairi-go-image-upload/", "../", -1)
+	thumbnailPath, _, dotDotthumbnailPath, err := generateDotDotPath(rootDirectory, thumbnailFullName)
 
 	//save resized image
 	err = imaging.Save(thumbnail, thumbnailPath)
